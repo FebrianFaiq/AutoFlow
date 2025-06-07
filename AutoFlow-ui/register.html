@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 class="text-2xl font-bold text-center">Register</h2>
+        <div class="space-y-4 mt-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Name</label>
+                <input id="register-name" type="text" class="mt-1 block w-full p-2 border rounded-md" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <input id="register-email" type="email" class="mt-1 block w-full p-2 border rounded-md" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Password</label>
+                <input id="register-password" type="password" class="mt-1 block w-full p-2 border rounded-md" required>
+            </div>
+            <button onclick="register()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Register</button>
+            <p class="text-center text-sm">Already have an account? <a href="login.html" class="text-blue-500">Login</a></p>
+        </div>
+        <div id="message" class="text-center text-red-500 mt-4"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+
+        async function register() {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('message').innerText = 'Registration successful! Please login.';
+                    window.location.href = 'login.html';
+                } else {
+                    document.getElementById('message').innerText = data.error || 'Registration failed';
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = 'Error connecting to server';
+            }
+        }
+    </script>
+</body>
+</html>

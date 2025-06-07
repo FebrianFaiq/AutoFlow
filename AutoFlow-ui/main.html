@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Mobil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold">Daftar Mobil</h1>
+            <button onclick="window.location.href='profile.html'" class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Add Mobil Button -->
+        <button onclick="showAddMobilForm()" class="mb-4 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Add New Mobil</button>
+
+        <!-- Mobils List -->
+        <div id="mobils-list" class="grid grid-cols-1 gap-4"></div>
+
+        <!-- Add Mobil Modal -->
+        <div id="add-mobil-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg w-full max-w-md">
+                <h2 class="text-xl font-bold mb-4">Add Mobil</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nama</label>
+                        <input id="mobil-nama" type="text" class="mt-1 block w-full p-2 border rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Merk</label>
+                        <input id="mobil-merk" type="text" class="mt-1 block w-full p-2 border rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Harga</label>
+                        <input id="mobil-amount" type="number" class="mt-1 block w-full p-2 border rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Deskripsi</label>
+                        <textarea id="mobil-deskripsi" class="mt-1 block w-full p-2 border rounded-md"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Gambar</label>
+                        <input id="mobil-gambar" type="file" accept="image/*" class="mt-1 block w-full p-2 border rounded-md">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button onclick="addMobil()" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Save</button>
+                        <button onclick="closeAddMobilForm()" class="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message -->
+        <div id="message" class="text-center text-red-500 mt-4"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+
+        // Check if logged in
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'login.html';
+        }
+
+        async function getMobils() {
+            try {
+                const response = await fetch(`${API_URL}/mobils`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    const mobilsList = document.getElementById('mobils-list');
+                    mobilsList.innerHTML = '';
+                    data.forEach(mobil => {
+                        mobilsList.innerHTML += `
+                            <div class="border p-4 rounded bg-white shadow cursor-pointer" onclick="window.location.href='detail.html?id=${mobil.mobil_id}'">
+                                <p><strong>Nama:</strong> ${mobil.nama}</p>
+                                <p><strong>Merk:</strong> ${mobil.merk}</p>
+                                <p><strong>Harga:</strong> Rp ${mobil.amount}</p>
+                                ${mobil.gambar ? `<img src="${mobil.gambar}" alt="${mobil.nama}" class="w-full h-32 object-cover mt-2">` : ''}
+                            </div>
+                        `;
+                    });
+                } else {
+                    document.getElementById('message').innerText = data.message || 'Failed to fetch mobils';
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = 'Error connecting to server';
+            }
+        }
+
+        function showAddMobilForm() {
+            document.getElementById('add-mobil-modal').classList.remove('hidden');
+        }
+
+        function closeAddMobilForm() {
+            document.getElementById('add-mobil-modal').classList.add('hidden');
+            document.getElementById('mobil-nama').value = '';
+            document.getElementById('mobil-merk').value = '';
+            document.getElementById('mobil-amount').value = '';
+            document.getElementById('mobil-deskripsi').value = '';
+            document.getElementById('mobil-gambar').value = '';
+        }
+
+        async function addMobil() {
+            const formData = new FormData();
+            formData.append('nama', document.getElementById('mobil-nama').value);
+            formData.append('merk', document.getElementById('mobil-merk').value);
+            formData.append('amount', document.getElementById('mobil-amount').value);
+            formData.append('deskripsi', document.getElementById('mobil-deskripsi').value);
+            const gambar = document.getElementById('mobil-gambar').files[0];
+            if (gambar) {
+                formData.append('gambar', gambar);
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/mobils`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('message').innerText = 'Mobil added successfully!';
+                    closeAddMobilForm();
+                    getMobils();
+                } else {
+                    document.getElementById('message').innerText = data.message || 'Failed to add mobil';
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = 'Error connecting to server';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        // Load mobils on page load
+        getMobils();
+    </script>
+</body>
+</html>
