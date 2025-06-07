@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detail Mobil</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-Ftd8LMSuTXQRi65U"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto p-4">
@@ -46,6 +47,7 @@
                     <div class="flex justify-end space-x-2">
                         <button id="update-mobil-btn" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400">Update</button>
                         <button id="cancel-mobil-btn" class="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600">Cancel</button>
+                        
                     </div>
                 </div>
             </div>
@@ -87,11 +89,18 @@
                         <p><strong>Deskripsi:</strong> ${mobil.deskripsi || '-'}</p>
                         ${mobil.gambar ? `<img src="${mobil.gambar}" alt="${mobil.nama}" class="max-w-sm mt-2">` : ''}
                         <div class="mt-4 space-x-2">
+                            <button id="buy-now-btn" class="bg-green-500 text-white p-2 rounded-md hover:bg-green-600">Beli Sekarang</button>
                             <button id="edit-mobil-btn-${mobil.mobil_id}" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Edit</button>
                             <button onclick="deleteMobil(${mobil.mobil_id})" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">Delete</button>
                             <button onclick="window.location.href='main.html'" class="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600">Back</button>
                         </div>
                     `;
+
+                    const buyBtn = document.getElementById('buy-now-btn');
+                    if (buyBtn) {
+                        buyBtn.addEventListener('click', () => buyNow(mobil));
+                    }
+
                     const editBtn = document.getElementById(`edit-mobil-btn-${mobil.mobil_id}`);
                     if (editBtn) {
                         console.log(`Binding edit button for mobil_id: ${mobil.mobil_id}`);
@@ -340,6 +349,71 @@
         });
 
         getMobilDetail();
+
+        async function buyNow(mobil) {
+            console.log('Starting purchase for mobil:', mobil);
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('message').innerText = '';
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/transaksi/beli`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        mobil_id: mobil.mobil_id,
+                        amount: mobil.amount
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').classList.add('hidden');
+
+               if (response.ok && data.snap_token) {
+                    console.log('Token Diterima dari Backend:', data.snap_token);
+                    // Buka popup pembayaran Midtrans
+                     alert('Token yang diterima: ' + data.snap_token); 
+                    // snap.pay(data.snap_token, {
+                    //     onSuccess: function(result){
+                    //         console.log('Payment success:', result);
+                    //         document.getElementById('message').className = 'text-center text-green-500 mt-4';
+                    //         document.getElementById('message').innerText = 'Pembayaran berhasil!';
+                    //     },
+                    //     onPending: function(result){
+                    //         console.log('Payment pending:', result);
+                    //         document.getElementById('message').className = 'text-center text-yellow-500 mt-4';
+                    //         document.getElementById('message').innerText = 'Menunggu pembayaran Anda.';
+                    //     },
+                    //     onError: function(result){
+                    //         console.log('Payment error:', result);
+                    //         document.getElementById('message').className = 'text-center text-red-500 mt-4';
+                    //         document.getElementById('message').innerText = 'Pembayaran gagal.';
+                    //     },
+                    //     onClose: function(){
+                    //         console.log('Payment popup closed');
+                    //     }
+                    // });
+                } else {
+                    onsole.error('Gagal mendapatkan Snap Token:', data);
+                    alert('Gagal mendapatkan Snap Token. Cek console (F12) untuk detail error dari backend.');
+                    document.getElementById('message').innerText = data.message || data.error || 'Gagal memulai transaksi.';
+                    
+                }
+
+            } catch (error) {
+                console.error('Error during purchase:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('message').innerText = 'Error: ' + error.message;
+            }
+        }
     </script>
 </body>
 </html>
