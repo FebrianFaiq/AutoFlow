@@ -5,6 +5,27 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
 /** @var \Laravel\Lumen\Routing\Router $router */
+// ==================================================
+// ROUTE UNTUK MENYAJIKAN HALAMAN WEB (UI) - TAMBAHAN BARU
+// ==================================================
+$router->get('/', function () {
+    return file_get_contents(base_path('public/main.html'));
+});
+$router->get('/detail.html', function () {
+    return file_get_contents(base_path('public/detail.html'));
+});
+$router->get('/login.html', function () {
+    return file_get_contents(base_path('public/login.html'));
+});
+$router->get('/register.html', function () {
+    return file_get_contents(base_path('public/register.html'));
+});
+$router->get('/profile.html', function () {
+    return file_get_contents(base_path('public/profile.html'));
+});
+
+
+
 $router->group(['prefix' => 'api'], function () use ($router) {
 
 
